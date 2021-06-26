@@ -1,4 +1,4 @@
-import { FormEvent, useState, useEffect } from 'react';
+import { FormEvent, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import { Button } from '../components/Button';
@@ -7,31 +7,11 @@ import { Question } from '../components/Question';
 import { database } from '../services/firebase';
 
 import { useAuth } from '../hooks/useAuth';
+import { useRoom } from '../hooks/useRoom';
 
 import logoImg from '../assets/images/logo.svg';
 
 import '../styles/room.scss';
-
-type FirebaseQuestions = Record<string, {
-  author: {
-    avatar: string;
-    name: string;
-  };
-  content: string;
-  isHighlighted: boolean;
-  isAnswered: boolean;
-}>
-
-type QuestionType = {
-  id: string;
-  author: {
-    avatar: string;
-    name: string;
-  };
-  content: string;
-  isHighlighted: boolean;
-  isAnswered: boolean;
-}
 
 type RoomParams = {
   id: string;
@@ -39,34 +19,12 @@ type RoomParams = {
 
 export function Room() {
   const [newQuestion, setNewQuestion] = useState('');
-  const [questions, setQuestions] = useState<QuestionType[]>([]);
-  const [title, setTitle] = useState('');
 
-  const { user } = useAuth();
   const params = useParams<RoomParams>();
   const roomId = params.id;
 
-  useEffect(() => {
-    const roomRef = database.ref(`rooms/${roomId}`);
-
-    roomRef.on('value', room => {
-      const databaseRoom = room.val();
-      const firebaseQuestions: FirebaseQuestions = databaseRoom.questions ?? {};
-
-      const parsedQuestions = Object.entries(firebaseQuestions).map(([ key, value ]) => {
-        return {
-          id: key,
-          content: value.content,
-          author: value.author,
-          isHighlighted: value.isHighlighted,
-          isAnswered: value.isAnswered,
-        }
-      });
-
-      setTitle(databaseRoom.title);
-      setQuestions(parsedQuestions);
-    });
-  }, [roomId]);
+  const { title, questions } = useRoom(roomId);
+  const { user } = useAuth();
 
   async function handleSendNewQuestion(event: FormEvent) {
     event.preventDefault();
